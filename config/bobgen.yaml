@@ -1,0 +1,27 @@
+sqlite:
+  dsn: "bank.db"
+  output: "./internal/db/models"
+  pkgname: "model"
+  except:
+    public.schema_migrations:
+
+relationships:
+  accounts: # The table name
+    - name: "custom_videos_relationship" # A unique identifier used to configure aliases
+      sides:
+        - from: "accounts" # Name of the source of the relationship
+          to: "transfers" # Table name of the other side of the relation
+          # mapping of columns from source to destination
+          columns:
+            - [account_number, from_account]
+            - [account_number, to_account]
+
+          # Is there a unique constraint on the destination columns?
+          # this is used to determine if it is a to-one or to-many relationship
+          to_unique: false
+
+          # Is the "key" on the destination table?
+          # This is used to determine what side to set.
+          # For example, if `users.id` -> `videos.user_id,` `to_key` = true
+          # so in the generated code, we know to set `videos.user_id` and not `users.id`
+          to_key: true

@@ -18,10 +18,7 @@ CREATE TABLE IF NOT EXISTS transfers (
     from_account TEXT NOT NULL,
     to_account TEXT NOT NULL,
     amount REAL NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (from_account) REFERENCES accounts(account_number),
-    FOREIGN KEY (to_account) REFERENCES accounts(account_number)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX users_name_idx ON users (name);
