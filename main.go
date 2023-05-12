@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
-	"go-api/internal/db/repo"
+	"go-api/internal/db/repo/rawsql"
 	"go-api/internal/handler"
 	"go-api/internal/services"
 	"log"
@@ -31,7 +31,7 @@ func main() {
 	//Avoid sqlite database locked when executing transaction
 	db.SetMaxOpenConns(1)
 
-	rep := repo.NewRepo(db)
+	rep := rawsql.NewRepository(db)
 
 	svc := services.NewService(rep)
 

@@ -1,6 +1,7 @@
-package repo
+package repo_test
 
 import (
+	"go-api/internal/db/repo"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,7 +12,7 @@ func TestExecTransfer(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, mig)
 
-	p := &ExecTransferParams{
+	p := &repo.ExecTransferParams{
 		FromAccountNumber: "9c95873a-aea6-49b3-9b3e-b204d89f1509",
 		ToAccountNumber:   "591ef016-8f0f-4ae0-aeb6-6621ef876cb3",
 		Amount:            100,
@@ -37,17 +38,17 @@ func TestExecTransfer(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	pt := &GetTransfersParams{
+	pt := &repo.GetTransfersParams{
 		AccountNumber: p.FromAccountNumber,
 	}
 
 	getTransfer(t, pt, n)
 
-	fromAccountParam := &GetAccountParams{
+	fromAccountParam := &repo.GetAccountParams{
 		AccountNumber: p.FromAccountNumber,
 	}
 
-	expectedFromAccount := &Account{
+	expectedFromAccount := &repo.Account{
 		AccountNumber: p.FromAccountNumber,
 		UserID:        4,
 		Balance:       fromBal,
@@ -55,11 +56,11 @@ func TestExecTransfer(t *testing.T) {
 
 	getAccount(t, fromAccountParam, expectedFromAccount)
 
-	toAccountParam := &GetAccountParams{
+	toAccountParam := &repo.GetAccountParams{
 		AccountNumber: p.ToAccountNumber,
 	}
 
-	expectedToAccount := &Account{
+	expectedToAccount := &repo.Account{
 		AccountNumber: p.ToAccountNumber,
 		UserID:        3,
 		Balance:       toBal,
@@ -70,7 +71,7 @@ func TestExecTransfer(t *testing.T) {
 	mig.Down()
 }
 
-func getTransfer(t *testing.T, p *GetTransfersParams, total int) []*Transfer {
+func getTransfer(t *testing.T, p *repo.GetTransfersParams, total int) []*repo.Transfer {
 	tt, err := rep.GetTransfers(ctx, p)
 	assert.Nil(t, err)
 	assert.NotEmpty(t, tt)

@@ -1,7 +1,7 @@
 sqlite:
   dsn: "bank.db"
   output: "./internal/db/models"
-  pkgname: "model"
+  pkgname: "models"
   except:
     public.schema_migrations:
 

@@ -1,37 +1,17 @@
-package repo
+package rawsql
 
 import (
 	"context"
-	"errors"
-	"time"
+	"go-api/internal/db/repo"
 )
 
-var (
-	ErrNotEnoughBalance = errors.New("account balance insufficient")
-)
-
-// DB model for table transfers
-type Transfer struct {
-	ID          int
-	FromAccount string
-	ToAccount   string
-	Amount      float64
-	CreatedAt   time.Time
-}
-
-type ExecTransferParams struct {
-	FromAccountNumber string
-	ToAccountNumber   string
-	Amount            float64
-}
-
-const addTransferQuery = `
+const AddTransferQuery = `
 INSERT INTO transfers (from_account, to_account, amount)
 VALUES (?,?,?)
 RETURNING id, from_account, to_account, amount, created_at;
 `
 
-const updateAccountBalance = `
+const UpdateAccountBalance = `
 UPDATE accounts
 SET balance = ?
 WHERE account_number = ?;
@@ -40,18 +20,18 @@ WHERE account_number = ?;
 // ExecTransfer runs a db transaction to update balance in accounts table
 // for "from account" and "to account", and also records transfer history.
 // If any error occured, all changes won't be saved.
-func (r *Repo) ExecTransfer(ctx context.Context, p *ExecTransferParams) (*Transfer, error) {
-	transfer := new(Transfer)
-	fromAccount := new(Account)
-	toAccount := new(Account)
+func (q *Query) ExecTransfer(ctx context.Context, p *repo.ExecTransferParams) (*repo.Transfer, error) {
+	transfer := new(repo.Transfer)
+	fromAccount := new(repo.Account)
+	toAccount := new(repo.Account)
 
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := q.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback()
 
-	row := tx.QueryRowContext(ctx, selectAccountQuery, p.FromAccountNumber)
+	row := tx.QueryRowContext(ctx, SelectAccountQuery, p.FromAccountNumber)
 
 	err = row.Scan(&fromAccount.AccountNumber, &fromAccount.UserID, &fromAccount.Balance, &fromAccount.CreatedAt)
 	if err != nil {
@@ -61,10 +41,10 @@ func (r *Repo) ExecTransfer(ctx context.Context, p *ExecTransferParams) (*Transf
 	fromAccount.Balance = fromAccount.Balance - p.Amount
 
 	if fromAccount.Balance < 0 {
-		return nil, ErrNotEnoughBalance
+		return nil, repo.ErrNotEnoughBalance
 	}
 
-	row = tx.QueryRowContext(ctx, selectAccountQuery, p.ToAccountNumber)
+	row = tx.QueryRowContext(ctx, SelectAccountQuery, p.ToAccountNumber)
 
 	err = row.Scan(&toAccount.AccountNumber, &toAccount.UserID, &toAccount.Balance, &toAccount.CreatedAt)
 	if err != nil {
@@ -73,19 +53,19 @@ func (r *Repo) ExecTransfer(ctx context.Context, p *ExecTransferParams) (*Transf
 
 	toAccount.Balance = toAccount.Balance + p.Amount
 
-	row = tx.QueryRowContext(ctx, addTransferQuery, fromAccount.AccountNumber, toAccount.AccountNumber, p.Amount)
+	row = tx.QueryRowContext(ctx, AddTransferQuery, fromAccount.AccountNumber, toAccount.AccountNumber, p.Amount)
 
 	err = row.Scan(&transfer.ID, &transfer.FromAccount, &transfer.ToAccount, &transfer.Amount, &transfer.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = tx.ExecContext(ctx, updateAccountBalance, fromAccount.Balance, fromAccount.AccountNumber)
+	_, err = tx.ExecContext(ctx, UpdateAccountBalance, fromAccount.Balance, fromAccount.AccountNumber)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = tx.ExecContext(ctx, updateAccountBalance, toAccount.Balance, toAccount.AccountNumber)
+	_, err = tx.ExecContext(ctx, UpdateAccountBalance, toAccount.Balance, toAccount.AccountNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -97,28 +77,24 @@ func (r *Repo) ExecTransfer(ctx context.Context, p *ExecTransferParams) (*Transf
 	return transfer, nil
 }
 
-type GetTransfersParams struct {
-	AccountNumber string
-}
-
-const getTransfersQuery = `
+const GetTransfersQuery = `
 SELECT id, from_account, to_account, amount, created_at FROM transfers
 WHERE from_account = ? OR to_account = ?;
 `
 
 // GetTransfers gets all transfer that related to account number either
 // "from account" or "to account"
-func (r *Repo) GetTransfers(ctx context.Context, p *GetTransfersParams) ([]*Transfer, error) {
-	var transfers []*Transfer
+func (q *Query) GetTransfers(ctx context.Context, p *repo.GetTransfersParams) ([]*repo.Transfer, error) {
+	var transfers []*repo.Transfer
 
-	rows, err := r.db.QueryContext(ctx, getTransfersQuery, p.AccountNumber, p.AccountNumber)
+	rows, err := q.db.QueryContext(ctx, GetTransfersQuery, p.AccountNumber, p.AccountNumber)
 	if err != nil {
-		return []*Transfer{}, err
+		return []*repo.Transfer{}, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		transfer := new(Transfer)
+		transfer := new(repo.Transfer)
 
 		err = rows.Scan(&transfer.ID, &transfer.FromAccount, &transfer.ToAccount, &transfer.Amount, &transfer.CreatedAt)
 		if err != nil {
@@ -129,11 +105,11 @@ func (r *Repo) GetTransfers(ctx context.Context, p *GetTransfersParams) ([]*Tran
 	}
 
 	if err := rows.Close(); err != nil {
-		return []*Transfer{}, err
+		return []*repo.Transfer{}, err
 	}
 
 	if err := rows.Err(); err != nil {
-		return []*Transfer{}, err
+		return []*repo.Transfer{}, err
 	}
 
 	return transfers, nil

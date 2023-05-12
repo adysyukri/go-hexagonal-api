@@ -1,6 +1,7 @@
-package repo
+package repo_test
 
 import (
+	"go-api/internal/db/repo"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,7 +12,7 @@ func TestAddUser(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, mig)
 
-	p := &AddUserParams{
+	p := &repo.AddUserParams{
 		Name: "Test User",
 	}
 
@@ -29,7 +30,7 @@ func TestGetUser(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, mig)
 
-	p := &GetUserParams{
+	p := &repo.GetUserParams{
 		ID: 1,
 	}
 

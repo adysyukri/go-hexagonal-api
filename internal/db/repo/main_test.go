@@ -1,7 +1,9 @@
-package repo
+package repo_test
 
 import (
 	"database/sql"
+	"go-api/internal/db/repo"
+	"go-api/internal/db/repo/rawsql"
 	"log"
 	"os"
 	"testing"
@@ -14,7 +16,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var rep Repository
+var rep repo.Repository
 var db *sql.DB
 var dbErr error
 var ctx = context.Background()
@@ -28,7 +30,7 @@ func TestMain(m *testing.M) {
 
 	db.SetMaxOpenConns(1)
 
-	rep = NewRepo(db)
+	rep = rawsql.NewRepository(db)
 
 	i := m.Run()
 
@@ -50,7 +52,7 @@ func seedData(ctx context.Context, db *sql.DB) (*migrate.Migrate, error) {
 	}
 
 	if err == nil || err.Error() != "no change" {
-		accounts := []*Account{
+		accounts := []*repo.Account{
 			{AccountNumber: "6ed3e773-ec0e-4cab-879a-9720d6cd37cd", UserID: 1, Balance: 1000},
 			{AccountNumber: "d8f714ee-f25d-4674-8083-16c419ba967a", UserID: 2, Balance: 100},
 			{AccountNumber: "591ef016-8f0f-4ae0-aeb6-6621ef876cb3", UserID: 3, Balance: 500},
@@ -58,19 +60,19 @@ func seedData(ctx context.Context, db *sql.DB) (*migrate.Migrate, error) {
 		}
 
 		for _, a := range accounts {
-			_, err := db.ExecContext(ctx, addAccountQuery, a.AccountNumber, a.UserID, a.Balance)
+			_, err := db.ExecContext(ctx, rawsql.AddAccountQuery, a.AccountNumber, a.UserID, a.Balance)
 			if err != nil {
 				return nil, err
 			}
 		}
 
-		transfers := []*Transfer{
+		transfers := []*repo.Transfer{
 			{FromAccount: "6ed3e773-ec0e-4cab-879a-9720d6cd37cd", ToAccount: "d8f714ee-f25d-4674-8083-16c419ba967a", Amount: 50},
 			{FromAccount: "d8f714ee-f25d-4674-8083-16c419ba967a", ToAccount: "6ed3e773-ec0e-4cab-879a-9720d6cd37cd", Amount: 500},
 		}
 
 		for _, tr := range transfers {
-			_, err := db.ExecContext(ctx, addTransferQuery, tr.FromAccount, tr.ToAccount, tr.Amount)
+			_, err := db.ExecContext(ctx, rawsql.AddTransferQuery, tr.FromAccount, tr.ToAccount, tr.Amount)
 			if err != nil {
 				return nil, err
 			}

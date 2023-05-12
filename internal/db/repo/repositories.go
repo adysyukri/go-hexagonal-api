@@ -18,7 +18,3 @@ type Repository interface {
 type Repo struct {
 	db *sql.DB
 }
-
-func NewRepo(db *sql.DB) Repository {
-	return &Repo{db}
-}

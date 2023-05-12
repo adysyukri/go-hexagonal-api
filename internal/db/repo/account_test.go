@@ -1,6 +1,7 @@
-package repo
+package repo_test
 
 import (
+	"go-api/internal/db/repo"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,7 +12,7 @@ func TestAddAccount(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, mig)
 
-	p := &AddAccountParams{
+	p := &repo.AddAccountParams{
 		UserID:  2,
 		Deposit: 100.20,
 	}
@@ -32,7 +33,7 @@ func TestAddAccountNewUser(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, mig)
 
-	p := &AddAccountNewUserParams{
+	p := &repo.AddAccountNewUserParams{
 		Name:    "Test User",
 		Deposit: 1009.20,
 	}
@@ -58,11 +59,11 @@ func TestGetAccount(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, mig)
 
-	p := &GetAccountParams{
+	p := &repo.GetAccountParams{
 		AccountNumber: "6ed3e773-ec0e-4cab-879a-9720d6cd37cd",
 	}
 
-	expected := &Account{
+	expected := &repo.Account{
 		AccountNumber: "6ed3e773-ec0e-4cab-879a-9720d6cd37cd",
 		UserID:        1,
 		Balance:       1000,
@@ -73,7 +74,7 @@ func TestGetAccount(t *testing.T) {
 	mig.Down()
 }
 
-func getAccount(t *testing.T, p *GetAccountParams, e *Account) *Account {
+func getAccount(t *testing.T, p *repo.GetAccountParams, e *repo.Account) *repo.Account {
 	a, err := rep.GetAccount(ctx, p)
 	assert.Nil(t, err)
 	assert.NotNil(t, a)
